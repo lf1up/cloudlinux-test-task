@@ -172,3 +172,9 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# node_modules and other npm stuff
+node_modules/
+
+# MacOS Finder files
+.DS_Store
