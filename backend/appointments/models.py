@@ -6,7 +6,7 @@ class Appointment(models.Model):
     Model representing an appointment from user.
     """
 
-    date = models.DateField(auto_created=True)
+    date = models.DateField(blank=True, null=True, auto_now_add=True)
     user = models.ForeignKey(
         "users.User", on_delete=models.CASCADE, related_name="appointments"
     )

@@ -1,9 +1,10 @@
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
 from users.permissions import IsActive
-from appointments.models import Appointment, Response
+from appointments.models import Appointment, Response as ResponseModel
 
 
 class CreateAppointmentView(APIView):
@@ -31,6 +32,44 @@ class CreateAppointmentView(APIView):
             return Response(
                 {"message": "Appointment created successfully."},
                 status=status.HTTP_201_CREATED,
+            )
+
+        except Exception as e:
+            return Response(
+                {"message": str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+
+class DeleteAppointmentView(APIView):
+    """
+    View to delete an appointment.
+    """
+
+    permission_classes = (
+        IsAuthenticated,
+        IsActive,
+    )
+
+    def delete(self, request, appointment_id):
+        """
+        Handle DELETE request to delete an appointment.
+        """
+
+        try:
+            user = request.user
+            appointment = Appointment.objects.get(id=appointment_id, user=user)
+            appointment.delete()
+
+            return Response(
+                {"message": "Appointment deleted successfully."},
+                status=status.HTTP_200_OK,
+            )
+
+        except Appointment.DoesNotExist:
+            return Response(
+                {"message": "Appointment not found."},
+                status=status.HTTP_404_NOT_FOUND,
             )
 
         except Exception as e:
@@ -158,7 +197,7 @@ class CreateResponseView(APIView):
             appointment = Appointment.objects.get(id=appointment_id)
 
             response_text = request.data.get("text", "")
-            response = Response.objects.create(
+            response = ResponseModel.objects.create(
                 appointment=appointment, user=user, response=response_text
             )
             response.save()
@@ -197,7 +236,7 @@ class UpdateResponseView(APIView):
         """
 
         try:
-            response = Response.objects.get(id=response_id)
+            response = ResponseModel.objects.get(id=response_id)
 
             response_text = request.data.get("text", "")
             response.text = response_text
@@ -208,7 +247,7 @@ class UpdateResponseView(APIView):
                 status=status.HTTP_200_OK,
             )
 
-        except Response.DoesNotExist:
+        except ResponseModel.DoesNotExist:
             return Response(
                 {"message": "Response not found."},
                 status=status.HTTP_404_NOT_FOUND,
@@ -237,7 +276,7 @@ class DeleteResponseView(APIView):
         """
 
         try:
-            response = Response.objects.get(id=response_id)
+            response = ResponseModel.objects.get(id=response_id)
             response.delete()
 
             return Response(
