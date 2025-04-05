@@ -1,0 +1,14 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY ./backend/requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY ./backend /app
+
+RUN python manage.py migrate
+
+RUN echo "from users.models import User; User.objects.filter(username='admin').exists() or User.objects.create_superuser('admin', 'admin@example.com', 'admin')" | python manage.py shell
+
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]

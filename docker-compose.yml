@@ -1,0 +1,62 @@
+version: "3.8"
+
+volumes:
+  main-db:
+
+services:
+  postgres:
+    image: postgres:15.4-alpine
+    command: -c "max_connections=1000"
+    container_name: postgres
+    volumes:
+      - main-db:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres", "-d", "postgres"]
+      interval: 5s
+      timeout: 30s
+      retries: 10
+      start_period: 10s
+    environment:
+      - POSTGRES_HOST_AUTH_METHOD=trust
+  backend:
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:@postgres:5432/postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+  frontend:
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+  redis:
+    image: redis:alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    command: celery -A app worker --loglevel=info
+    depends_on:
+      - backend
+      - redis
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    volumes:
+      - .:/app
