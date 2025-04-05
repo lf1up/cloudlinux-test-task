@@ -1,5 +1,3 @@
-import { deleteAppointment } from "./utils";
-
 // API endpoints depends on environment (development, production etc.)
 const API = {
   login: "http://127.0.0.1:8000/api/v1/login/",
